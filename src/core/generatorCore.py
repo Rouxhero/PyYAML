@@ -2,6 +2,7 @@
 
 
 import os
+import yaml
 from core.state import State, TABYAML, Transition
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
@@ -130,18 +131,44 @@ class Core:
         with open("../libs/temp.yaml","w+") as f:
             f.write(myCode)
         self.window.imgReceiver.clear()
-        # threading.Thread(target=self.runPreview,args=()).start()
-        self.runPreview()
+        threading.Thread(target=self.runPreview,args=()).start()
+        #self.runPreview()
     def runPreview(self):
-        if os.name == "posix":
-            os.system("cd ../libs/&&run.sh")
-        else :
-            os.system("cd ../libs/&&run.bat")
+        self.convertYaml()
+        os.system("java -jar ../libs/plantuml.jar ../libs/temp.puml")
         self.refreshPreview()
 
+    def convertYaml(self):
+        with open("../libs/temp.yaml","r") as f:
+            data =  yaml.load(f.read(),Loader=yaml.FullLoader)
+        print(data)
+        rootState = data['statechart']['root state']
+        text = f"""
+@startuml 
+
+[*] --> {rootState['initial']}
+
+{self.generateStates(rootState['states'])}
+
+@enduml
+""" 
+        with open("../libs/temp.puml","w+") as f:
+            f.write(text)
+
+    def generateStates(self,states):
+        if states == None:
+            return ""
+        text = ""
+        for state in states:
+            text += f"""
+{state['name']} : 'on entry :  {state['on entry']}'
+""" 
+            if state['transitions'] != None:
+                for trans in state['transitions']:
+                    text += f"\n{state['name']} --> {trans['target']} : {trans['event']}"
+        return text
     def refreshPreview(self):
         try :
-            print(open("../libs/temp.png","rb").read())
             pixmap = QPixmap('../libs/temp.png')
             self.window.imgReceiver.setPixmap(pixmap)
             self.window.imgReceiver.resize(pixmap.width(),pixmap.height())

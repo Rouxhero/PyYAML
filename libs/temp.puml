@@ -1,0 +1,20 @@
+
+@startuml 
+
+[*] --> Start
+
+
+Idle : 'on entry :  entrer
+'
+
+Idle --> Work : press
+Work : 'on entry :  Start Working
+'
+
+Work --> Idle : release
+Start : 'on entry :  Heating
+'
+
+Start --> Idle : short
+
+@enduml
